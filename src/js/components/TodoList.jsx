@@ -1,94 +1,183 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 
-
-const API_URL = "https://playground.4geeks.com/todo/todos/erikruiz";
-
-export default function TodoList() {
+const TodoList = () => {
   const [tasks, setTasks] = useState([]);
-  const [newTaskLabel, setNewTaskLabel] = useState("");
+  const [newTask, setNewTask] = useState("");
+  const user = 'erikruizh'; 
+  const apiUrl = `https://playground.4geeks.com/todo/users/${user}`; 
+  const postUrl = `https://playground.4geeks.com/todo/todos/${user}`; 
 
- 
+  
+  useEffect(() => {
+    checkAndCreateUser();
+  }, []);
+
+  
+  const checkAndCreateUser = async () => {
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        
+        if (response.status === 404) {
+          createUser();
+        } else {
+          throw new Error(`Error al verificar usuario: ${response.status}`);
+        }
+      } else {
+        fetchTasks(); 
+      }
+    } catch (error) {
+      console.error('Error al verificar o crear usuario:', error);
+    }
+  };
+
+  
   const createUser = async () => {
-    await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify({ label: "placeholder", done: false }),
-      headers: { "Content-Type": "application/json" }
-    });
-    await deleteTaskById(0); 
+    try {
+      const response = await fetch('https://playground.4geeks.com/todo/users', {
+        method: 'POST',
+        body: JSON.stringify({ name: user }), 
+        headers: {
+          'Content-Type': 'application/json',
+          'accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error al crear usuario: ${response.status}`);
+      }
+
+      fetchTasks(); 
+    } catch (error) {
+      console.error('Error al crear usuario:', error);
+    }
   };
 
   
   const fetchTasks = async () => {
     try {
-      const res = await fetch(API_URL);
-      if (!res.ok) throw new Error("Fallo al obtener tareas");
-      const data = await res.json();
-      setTasks(data.todos || []);
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error al obtener tareas: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      
+      if (Array.isArray(data.todos)) {
+        setTasks(data.todos);
+      } else {
+        console.error('Los datos no son un array:', data);
+      }
     } catch (error) {
-      console.log("Error al obtener tareas:", error.message);
+      console.error('Error al obtener tareas:', error);
     }
   };
 
   
   const addTask = async () => {
-    if (!newTaskLabel.trim()) return;
+    if (newTask.trim() !== "") {
+      const task = { 
+        label: newTask,  
+        is_done: false   
+      };
 
-    const task = { label: newTaskLabel.trim(), done: false };
+      try {
+        const response = await fetch(postUrl, {
+          method: 'POST',
+          body: JSON.stringify(task), 
+          headers: {
+            'Content-Type': 'application/json',
+            'accept': 'application/json', 
+          },
+        });
 
-    await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify(task),
-      headers: { "Content-Type": "application/json" }
-    });
+        if (!response.ok) {
+          throw new Error(`Error al agregar tarea: ${response.status}`);
+        }
 
-    setNewTaskLabel("");
-    fetchTasks();
-  };
-
-  
-  const deleteTaskById = async (id) => {
-    await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-    fetchTasks();
-  };
-
-  
-  const clearAllTasks = async () => {
-    for (const task of tasks) {
-      await deleteTaskById(task.id);
+        setNewTask(""); 
+        fetchTasks(); 
+      } catch (error) {
+        console.error('Error al agregar tarea:', error);
+      }
     }
   };
 
   
-  useEffect(() => {
-    createUser().then(fetchTasks);
-  }, []);
+  const deleteTask = async (id) => {
+    try {
+      const response = await fetch(`https://playground.4geeks.com/todo/todos/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'accept': 'application/json', 
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error al eliminar tarea: ${response.status}`);
+      }
+
+      fetchTasks(); 
+    } catch (error) {
+      console.error('Error al eliminar tarea:', error);
+    }
+  };
+
+  
+  const clearAllTasks = async () => {
+    try {
+      
+      for (const task of tasks) {
+        const response = await fetch(`https://playground.4geeks.com/todo/todos/${task.id}`, {
+          method: 'DELETE',
+          headers: {
+            'accept': 'application/json',  
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error al eliminar tarea: ${response.status}`);
+        }
+      }
+
+      fetchTasks(); 
+    } catch (error) {
+      console.error('Error al limpiar todas las tareas:', error);
+    }
+  };
 
   return (
-    <div className="todo-container">
-      <h1>📝 Lista de tareas 📝</h1>
-
+    <div>
+      <h1>Lista de Tareas Erik Ruiz</h1>
       <input
         type="text"
-        placeholder="Nueva tarea..."
-        value={newTaskLabel}
-        onChange={(e) => setNewTaskLabel(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && addTask()}
+        value={newTask}
+        onChange={(e) => setNewTask(e.target.value)}
+        placeholder="Agregar tarea"
       />
       <button onClick={addTask}>Agregar</button>
-      <button onClick={clearAllTasks} style={{ marginLeft: "10px", color: "red" }}>
-        Limpiar lista
-      </button>
-
+      <button onClick={clearAllTasks}>Limpiar todas las tareas</button>
       <ul>
         {tasks.map((task) => (
           <li key={task.id}>
             {task.label}
-            <button onClick={() => deleteTaskById(task.id)}>❌</button>
+            <button onClick={() => deleteTask(task.id)}>Eliminar</button>
+            
+            <button onClick={() => toggleTaskCompletion(task.id, task.is_done)}>
+              {task.is_done ? 'Marcar como no completada' : 'Marcar como completada'}
+            </button>
           </li>
         ))}
       </ul>
-
-      <p>Total: {tasks.length} tareas</p>
     </div>
   );
-}
+};
+
+export default TodoList;
