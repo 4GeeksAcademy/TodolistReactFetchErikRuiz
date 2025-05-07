@@ -7,34 +7,31 @@ const TodoList = () => {
   const apiUrl = `https://playground.4geeks.com/todo/users/${user}`; 
   const postUrl = `https://playground.4geeks.com/todo/todos/${user}`; 
 
-  
   useEffect(() => {
     checkAndCreateUser();
   }, []);
 
-  
   const checkAndCreateUser = async () => {
     try {
+      
       const response = await fetch(apiUrl, {
         method: 'GET',
       });
 
-      if (!response.ok) {
-        
-        if (response.status === 404) {
-          createUser();
-        } else {
-          throw new Error(`Error al verificar usuario: ${response.status}`);
-        }
-      } else {
+      
+      if (response.status === 404) {
+        console.log("Usuario no encontrado, creando...");
+        createUser(); 
+      } else if (response.ok) {
         fetchTasks(); 
+      } else {
+        throw new Error(`Error al verificar usuario: ${response.status}`);
       }
     } catch (error) {
       console.error('Error al verificar o crear usuario:', error);
     }
   };
 
-  
   const createUser = async () => {
     try {
       const response = await fetch('https://playground.4geeks.com/todo/users', {
@@ -50,13 +47,13 @@ const TodoList = () => {
         throw new Error(`Error al crear usuario: ${response.status}`);
       }
 
+      console.log("Usuario creado exitosamente");
       fetchTasks(); 
     } catch (error) {
       console.error('Error al crear usuario:', error);
     }
   };
 
-  
   const fetchTasks = async () => {
     try {
       const response = await fetch(apiUrl, {
@@ -69,7 +66,6 @@ const TodoList = () => {
 
       const data = await response.json();
 
-      
       if (Array.isArray(data.todos)) {
         setTasks(data.todos);
       } else {
@@ -80,7 +76,6 @@ const TodoList = () => {
     }
   };
 
-  
   const addTask = async () => {
     if (newTask.trim() !== "") {
       const task = { 
@@ -110,7 +105,6 @@ const TodoList = () => {
     }
   };
 
-  
   const deleteTask = async (id) => {
     try {
       const response = await fetch(`https://playground.4geeks.com/todo/todos/${id}`, {
@@ -130,10 +124,8 @@ const TodoList = () => {
     }
   };
 
-  
   const clearAllTasks = async () => {
     try {
-      
       for (const task of tasks) {
         const response = await fetch(`https://playground.4geeks.com/todo/todos/${task.id}`, {
           method: 'DELETE',
@@ -153,6 +145,29 @@ const TodoList = () => {
     }
   };
 
+  const toggleTaskCompletion = async (taskId, currentStatus) => {
+    try {
+      const updatedTask = { is_done: !currentStatus };
+
+      const response = await fetch(`https://playground.4geeks.com/todo/todos/${taskId}`, {
+        method: 'PUT',
+        body: JSON.stringify(updatedTask),
+        headers: {
+          'Content-Type': 'application/json',
+          'accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error al actualizar tarea: ${response.status}`);
+      }
+
+      fetchTasks();
+    } catch (error) {
+      console.error('Error al actualizar estado de la tarea:', error);
+    }
+  };
+
   return (
     <div>
       <h1>Lista de Tareas Erik Ruiz</h1>
@@ -169,7 +184,6 @@ const TodoList = () => {
           <li key={task.id}>
             {task.label}
             <button onClick={() => deleteTask(task.id)}>Eliminar</button>
-            
             <button onClick={() => toggleTaskCompletion(task.id, task.is_done)}>
               {task.is_done ? 'Marcar como no completada' : 'Marcar como completada'}
             </button>
