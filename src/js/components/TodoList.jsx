@@ -13,7 +13,7 @@ const TodoList = () => {
 
   const checkAndCreateUser = async () => {
     try {
-      
+     
       const response = await fetch(apiUrl, {
         method: 'GET',
       });
@@ -23,6 +23,7 @@ const TodoList = () => {
         console.log("Usuario no encontrado, creando...");
         createUser(); 
       } else if (response.ok) {
+        
         fetchTasks(); 
       } else {
         throw new Error(`Error al verificar usuario: ${response.status}`);
@@ -34,7 +35,8 @@ const TodoList = () => {
 
   const createUser = async () => {
     try {
-      const response = await fetch('https://playground.4geeks.com/todo/users', {
+      
+      const response = await fetch(`https://playground.4geeks.com/todo/users/erikruizh`, {
         method: 'POST',
         body: JSON.stringify({ name: user }), 
         headers: {
@@ -48,9 +50,32 @@ const TodoList = () => {
       }
 
       console.log("Usuario creado exitosamente");
-      fetchTasks(); 
+      createTodoList(); 
     } catch (error) {
       console.error('Error al crear usuario:', error);
+    }
+  };
+
+  const createTodoList = async () => {
+    try {
+      
+      const response = await fetch(postUrl, {
+        method: 'POST',
+        body: JSON.stringify({ label: 'Primera tarea', is_done: false }),
+        headers: {
+          'Content-Type': 'application/json',
+          'accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error al crear la lista de tareas: ${response.status}`);
+      }
+
+      console.log('Lista de tareas creada para el usuario');
+      fetchTasks(); 
+    } catch (error) {
+      console.error('Error al crear la lista de tareas:', error);
     }
   };
 
@@ -150,7 +175,7 @@ const TodoList = () => {
       const updatedTask = { is_done: !currentStatus };
 
       const response = await fetch(`https://playground.4geeks.com/todo/todos/${taskId}`, {
-        method: 'PUT',
+        method: 'PUT',  // Cambié de PATCH a PUT
         body: JSON.stringify(updatedTask),
         headers: {
           'Content-Type': 'application/json',
