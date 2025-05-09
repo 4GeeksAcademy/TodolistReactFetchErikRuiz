@@ -55,30 +55,6 @@ const TodoList = () => {
       console.error('Error al crear usuario:', error);
     }
   };
-
-  const createTodoList = async () => {
-    try {
-      
-      const response = await fetch(postUrl, {
-        method: 'POST',
-        body: JSON.stringify({ label: 'Primera tarea', is_done: false }),
-        headers: {
-          'Content-Type': 'application/json',
-          'accept': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error al crear la lista de tareas: ${response.status}`);
-      }
-
-      console.log('Lista de tareas creada para el usuario');
-      fetchTasks(); 
-    } catch (error) {
-      console.error('Error al crear la lista de tareas:', error);
-    }
-  };
-
   const fetchTasks = async () => {
     try {
       const response = await fetch(apiUrl, {
